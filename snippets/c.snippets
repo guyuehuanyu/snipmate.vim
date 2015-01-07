@@ -111,3 +111,903 @@ snippet fpr
 # This is kind of convenient
 snippet .
 	[${1}]${2}
+
+# debug
+snippet dbf
+	#ifdef MY_DBF
+	printf("@MY_DEBUG@file:%s\tfunc:%s\tline:%d\n", __FILE__, __func__, __LINE__);
+	#endif
+
+snippet dbk
+	#ifdef MY_DBK
+	printk("@MY_DEBUG@file:%s\tfunc:%s\tline:%d\t\n", __FILE__, __func__, __LINE__);
+	#endif
+# file header
+snippet hdr
+	/*
+	 * ${1:`expand('%:t')`} - ${2}
+	 *
+	 * (c) Copyright `strftime("%Y")` ${3:`g:snips_copyright`}. All Rights Reserved.
+	 *
+	 * Maintainer: ${4:`g:snips_author`} <${5:`g:snips_email`}>
+	 *    Created: `strftime("%Y-%m-%d")`
+	 * LastChange: `strftime("%Y-%m-%d")`
+	 */
+	${6}
+
+
+
+
+# iferror
+snippet iferror
+	if(${2}){
+		perror("${1}");
+		exit(EXIT_FAILURE);
+	}
+
+# shm
+snippet shm
+	shmget/*{{{*/
+	shmat
+	shmdt
+	shmctl/*}}}*/
+	
+# shmget
+snippet shmget
+	shmget(${1:ket_t key}, ${2:size_t size}, ${3:int shmflg});    /* 得到一个共享内存标识符或创建一个共享内存对象 */
+	*成功:返回共享内存的标识符(int)类型/*{{{*/
+	*出错:-1, 错误原因存于error中
+	*key-------0(PC_PRIVATE):会建立新共享内存对象
+	* 			大于0的32位整数：视参数shmflg来确定操作。通常要求此值来源于ftok返回的IPC键值
+	*size------大于0的整数：新建的共享内存大小，以字节为单位
+	*	   		0：只获取共享内存时指定为0
+	*shmflg----用法:IPC_CREAT | 0666
+	/*}}}*/
+
+# shmat
+snippet shmat
+	shmat(${1:int shmid}, ${2:chnst void *shmaddr}, ${3:int shmflg});    /* 把共享内存区对象映射到调用进程的地址空间 */
+	*成功:附加好的共享内存地址(void *)类型/*{{{*/
+	*出错:-1, 错误原因存于error中
+	*shmid------共享内存标识符
+	*shmaddr----NULL让内核自己决定一个合适的地址位置
+	*shmflg-----SHM_RDONLY:为只读模式，一般为0可读可写
+	/*}}}*/
+
+# shmdt
+snippet shmdt
+	shmdt(${1:const void *shmaddr});    /* 断开共享内存连接 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1, 错误原因存于error中
+	*shmaddr----连接的共享内存的起始地址
+	*附加说明---并不删除所指定的共享内存区，而只是将先前用shmat函数连接（attach）好的共享内存胶离（detach）目前的进程
+	/*}}}*/
+
+# shmctl
+snippet shmctl
+	shmctl(${1:int shmid}, ${2:int cmd}, ${3:struct shmid_ds *buf});/* 共享内存管理(删除,得到,改变这片共享内存) */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1, 错误原因存于error中
+	*shmid------共享内存标识符
+	*cmd--------IPC_RMID:删除这片共享内存
+	*           IPC_STAT:得到共享内存的状态,把共享内存的shmid_ds结构复制到buf中
+	*           IPC_SET:改变共享内存的状态，把buf所的shmid_ds结构中的uid,gid,mode复制到共享内存的shmid_ds结构内
+	*buf--------一般为NULL;
+	/*}}}*/
+
+# msg
+snippet msg
+	msgget/*{{{*/
+	msgsnd
+	msgrcv
+	msgctl/*}}}*/
+
+# msgget
+snippet msgget
+	msgget(${1:key_t key}, ${2:int msgflg});    /* 获取与某个键关联的消息队列 */
+	*成功:(int)消息队列标识值/*{{{*/
+	*出错:(int)-1, 错误原因存于error中,有时也会返回0,这个时候也是可以正常使用
+	*key--------消息队列关联的键
+	*           IPC_PRIVATE(0)创建一个只有创建者进程才可以访问的信号量(父子间用到)
+	*shmflg-----用法:IPC_CREAT | 0666
+	/*}}}*/
+
+# msgsnd
+snippet msgsnd
+	msgsnd(${1:int msqid}, ${2:sonst void *msgp}, ${3:size_t msgsz}, ${4:int msgflg});    /* 将一个新的消息写队列 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1, 错误原因存于error中
+	*msgid------是由msgget函数返回的消息队列标识符
+	*msgp-------结构体指针,开始是一个long int
+	*           struct my_message{
+	*               long int my_type;    /* 消息类型,必须 > 0*/
+	*               /* The data you wish to transfer */
+	*           };
+	*msgsz------是msgp指向的消息的长度(不包括长整型消息类型成员变量的长度)
+	*msgflg-----0:阻塞等待队列队列中有空间
+	*           IPC_NOWAIT:当达到队列满或队列消息到达系统范围的限制时,函数立刻返回
+	*//*}}}*/
+	 
+# msgrcv
+snippet msgrcv
+	msgrcv(${1:int msqid}, ${2:void *msgp}, ${3:size_t msgsz}, ${4:long msgtyp}, ${5:int msgflg});    /* 可以从消息队列中读取消息 */
+	*成功:(ssize_t)返回放到接收缓存区中的正文字节数/*{{{*/
+	*出错:(ssize_t)-1, 错误原因存于error中
+	*msgid------是由msgget函数返回的消息队列标识符
+	*msgp-------结构体指针,开始是一个long int
+	*           struct my_message{
+	*               long int my_type;    /* 消息类型,必须 > 0*/
+	*               /* The data you wish to transfer */
+	*           };
+	*msgsz------是msgp指向的消息的长度(不包括长整型消息类型成员变量的长度)
+	*msgtyp-----0:返回队列的最早的一个消息
+	*           >0:返回其类型为Mtype的第一个消息
+	*           <0:返回其类型小于或等于mtype参数的绝对值的最小的一个消息
+	*msgflg-----0:阻塞等待队列队列中有消息
+	*           IPC_NOWAIT:当没有相应类型的消息可以接收时,函数立刻返回
+	/*}}}*/
+
+# msgctl
+snippet msgctl
+	msgctl(${1:int msqid}, ${2:int cmd}, ${3:struct msqid_ds *buf});    /* 控制对消息队列的操作 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1, 错误原因存于error中
+	*msqid------是由msgget函数返回的消息队列标识符
+	*msgp-------结构体指针,开始是一个long int
+	*           struct my_message{
+	*               long int my_type;    /* 消息类型,必须 > 0*/
+	*               /* The data you wish to transfer */
+	*           };
+	*cmd--------IPC_RMID:删除这片共享内存
+	*           IPC_STAT:得到共享内存的状态,把共享内存的msqid_ds结构复制到buf中
+	*           IPC_SET:改变共享内存的状态，把buf所的msqid_ds结构中的uid,gid,mode复制到共享内存的shmid_ds结构内
+	*buf--------一般为NULL;
+	/*}}}*/
+
+# sem
+snippet sem
+	semget/*{{{*/
+	semop
+	semctl/*}}}*/
+
+# semget
+snippet semget
+	semget(${1:key_t key}, ${2:int nsems}, ${3:semflg});    /* 获取与某个键关联的信号量集标识 */
+	*成功:(int)信号量标识符/*{{{*/
+	*出错:(int)-1, 错误原因存于error中
+	*key--------所创建或打开信号量集的键值
+	*           IPC_PRIVATE(0)创建一个只有创建者进程才可以访问的信号量(父子间用到)
+	*nsems------创建的信号量集中的信号量的个数,该参数只在创建信号量集时有效
+	*shmflg-----用法:IPC_CREAT | 0666
+	/*}}}*/
+
+# semop
+snippet semop
+	semop(${1:int semid}, ${2:struct sembuf *sops}, ${3:szie_t nsops});    /* 操作一个或一组信号 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1, 错误原因存于error中
+	*semid-------信号集的识别码,可以通过semget获取
+	*sops--------指向存储信号操作结构的数组指针
+	*            struct sembuf{
+	*                short sem_num;   /* semaphore number */
+	*                                 /* 操作信号在信号集中的编号,第一个信号的编号是0*/
+	*                short sem_op;    /* semaphore operation */
+	*                                 /* 0: 操作底土暂时阻塞,直到信号的值变为0*/
+	*                                 /* -1: p操作 */
+	*                                 /* 1: v操作 */
+	*                short sem_flg;   /* operation flags */
+	*                                 /* IPC_NOWAIT: 对信号的操作不能满足时,semop()不会阻塞，并立即返回,同时设定错误信息 */
+	*                                 /* SEM_UNDO: 程序结束时(不论正常或不正常),保证信号值会被重设为semop()调用前的值. */
+	*                                 /* 目的:在于避免程序在异常情况时未将锁定的资源解锁，造成该资源永远锁定 */
+	*            } 
+	*nsops-------信号操作结构的数量,恒大于或等于1
+	*注: 调用的一切动作都是一次性完成的,这是为了避免出现因使用多个信号量而可能发生的况争现象 */
+	/*}}}*/
+
+# semctl
+snippet semctl
+	semctl(${1:int semid}, ${2:int semnum}, ${3:int cmd}, ${4:int or *});    /* 函数用来直接制信号量信息 */
+	*成功:(int)0(针对SETVAL和IPC_RMID)/*{{{*/
+	*出错:(int)-1, 错误原因存于error中
+	*semid------是由semget返回的信号量标识符
+	*semnum-----要操作的信号量编号
+	*cmd--------IPC_RMID:用于删除一个已经无需继续使用的信号量标识符
+	*           IPC_STAT:读取一个信号量集的数据结构semid_ds,并将其存储在semun中的buf参数中
+	*           IPC_SET:设置信号量集的数据结构semid_ds中的无素ipc_perm,其值取自semun中的buf参数
+	*           SETVAL:用来把信号量初始化为一个已知的值,作用:在信号量第一次使用之前对它进行设置
+	*           semctl(sid, semunm, GETVAL, 0);    /* 初始化信号量为0 */
+	*           union semun{
+	*               int val;    /* SETVAL命令时使用 */
+	*               struct semid_ds *buf;    /* IPC_STAT/IPC_SET/IPC_RMID命令中使用 */
+	*               unsigned short *array;    /* GETALL/SETALL命令时使用 */
+	*               struct seminfo *__buf;
+	*           }
+	/*}}}*/
+
+# pthread
+snippet pthread
+	pthread_create/*{{{*/
+	pthread_join
+	pthread_exit
+	pthread_cancel
+	pthread_setcancelstate
+	pthread_setcanceltype/*}}}*/
+
+# pthread_create
+snippet pthread_create
+	pthread_create(${1:pthread_t *restrict thread}, ${2:const pthread_attr_t *restrict attr}, ${3:void *(*start_routine)(void *)}, ${4:void *restrict arg});    /* 是类Unix操作系统（Unix、Linux、Mac OS X等）的创建线程的函数 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)则返回出错编号，并且*thread中的内容是未定义的
+	*     并不修改系统全局变量errno
+	*thread---------为指向线程标识符的指针
+	*attr-----------用来设置线程属性(一般为NULL)
+	*start_routine--线程运行函数的起始地址(一般为函数名)
+	*arg------------运行函数的参数
+	*               如果需要向函数传递多个参数,需要把这些参数放到一个结构体中,然后把这个结构的地址作为arg的参数传入
+	*注意:gcc需要加-lpthread -D_REENTRANT_(保证线程安全运行)
+	/*}}}*/
+
+# pthread_join
+snippet pthread_join
+	pthread_join(${1:pthread_t thread}, ${2:void **value_ptr});    /* 以阻塞的方式等待thread指定的线程结束*/
+	*成功:(int)0/*{{{*/
+	*出错:(int)则返回错误号
+	*     并不修改系统全局变量errno
+	*thread---------线程标识符,即线程ID
+	*(二级指针)value_ptr------用户定义的指针,用来存储被等待线程的返回值
+	*                         一般为NULL
+	*注意:当函数返回时,被等待线程的资源被收回.
+	/*}}}*/
+
+# pthread_exit
+snippet pthread_exit
+	pthread_exit(${1:void* value_ptr});    /* 终止调用它的线程并返回一个指向某个对象的指针 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1
+	*     并不修改系统全局变量errno
+	*value_ptr-------可以是一个字符串,或NULL
+	*注意:当该函数返回时,被等待线程的资源被收回.
+	/*}}}*/
+
+# pthread_cancel
+snippet pthread_cancel
+	pthread_cancel(${1:pthread_t thread});    /* 发送终止信号给thread线程 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)非0
+	*     并不修改系统全局变量errno
+	*thread---------线程标识符,即线程ID
+	*注意:发送成功并不意味着thread会终止,线程中要设置允许删除标置位
+	/*}}}*/
+
+snippet pthread_setcancelstate
+	pthread_setcancelstate(${1:int state}, ${2:int *oldstae});    /* 设置删除标志位 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)非0
+	*     并不修改系统全局变量errno
+	*state--------PTHREAD_CANCL_ENABLE
+	*             PTHREAD_CANCL_DISABLE
+	*oldstate-----(指针)一般为NULL
+	/*}}}*/
+
+# str
+snippet str
+	strcasecmp/*{{{*/
+	strncasecmp
+	strcpy
+	strncpy
+	strcmp
+	strncmp
+	strcat
+	strncat/*}}}*/
+
+# pipe
+snippet pipe
+	pipe(${1:int pipefd[2]});    /* 创建一个无名管道 */
+	*成功:(int)0/*{{{*/
+	*出错:(ssize_t)-1,并置errno
+	*pipefd[2]----管道的两个文件描述符,之后就是可以直接操作这两个文作描述符
+	*             pipefd[0]只能用于读操作;
+	*             pipefd[1]只能用于写操作;
+	*             close,read,write函数操作
+	*注意:只能有于父子进程或者兄弟进程(具有亲缘关系的进程)
+	*     不能seek定位
+	*     PIPE_BUF大小为65536个字节,在include/linux/limits.h中定义
+	/*}}}*/
+
+# read
+snippet piperead
+	read(${1:int pipefd}, ${2:void *buf}, ${3:size_t count});    /* 从管道中读数据 */
+	*成功:(ssize_t)返回读取的字节数/*{{{*/
+	*出错:(ssize_t)-1,并置errno
+	*读规则:自来水厂不存在---管道有水---返回读出字节数
+	*                        管道无水---返回0;
+	*       自来水厂存在-----要水量大于PIPE_BUF-----返回管道中现有的字节数
+	*                        要水量不大于PIPE_BUF---返回管道中水量或请求水量
+	*                        管道中无水时会阻塞等待水
+	/*}}}*/
+
+# write
+snippet pipewrite
+	write(${1:int pipefd}, ${2:const void *buf}, ${3:size_t count});    /* 向管道中写数据 */
+	*成功:(ssize_t)返回实际写的字节数/*{{{*/
+	*出错:(ssize_t)-1,并置errno
+	*写规则:取水人不存在---写入进程将会收到SIGPIPE信号(信号的黙认处理是停止写进程)
+	*写规则:取水人存在-----管道水满-----将会阻塞等待水被取走
+	*                      管道水没满---立即写入 
+	*注意:Linux不保证我们写入数据的原子性
+	/*}}}*/
+
+# lockf
+snippet lockf
+	lockf(${1:int fd}, ${2:int cmd}, ${3:off_t len});    /* 函数允许将文件区域用作信号量(监视锁),或用于控制对锁定进程的访问(强制模式记录锁定) */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1,并置errno
+	*说明:试图访问已锁定资源的其他进程将返回错误或进入休眠状态,直到资源解除锁定为止.
+	*     当关闭文件时,将释放进程的所有锁定,即使进程仍然有打开的文件
+	*     当进程终止时,将释放进程保留的所有锁定
+	*fd-----是打开的文件描述符(必须O_WRONLY | O_RDWR)
+	*cmd----是指定要采取的操作的控制值,允许的值在中定义
+			F_ULOCK 0	/* Unlock a previously locked region.  */
+	        F_LOCK  1	/* Lock a region for exclusive use.  */
+	        F_TLOCK 2	/* Test and lock a region for exclusive use.  */
+	        F_TEST  3	/* Test a region for other processes locks.  */
+	*len----是要锁定或解锁的连续字节数
+	*       0:锁定从当前偏移量到文件结尾的区域
+	*注意:当由于文件的某部分被其他进程锁定后,变量error将会设置为EAGAIN而不是EACCES
+	/*}}}*/
+
+# waitpid
+snippet waitpid
+	waitpid(${1:pid_t pid}, ${2:int *status}, ${3:int options});    /* 会暂时停止目前进程的执行,直到有信号来到或子进程结束 */
+	*成功:(int)子进程的PID/*{{{*/
+	*出错:(int)-1 失败原因存于errno中
+	*pidp------欲等待的子进程识别码
+	*         -1:等待任何子进程,相当于wait();
+	*          0:等待进程组识别码与目前进程相同的子进程(相当于parent_pid)
+	*   <-1 | >0:等待进程组识别码为pid绝对值的子进程
+	*status----保存子进程的结束状态,一般为NULL
+	*options---0:阻塞等待子进程结束
+	*          WNOHANG:若pid指定的子进程没有结束,则返回0,不予以等待.若结束,则返回该子进程的ID
+	*          WUNTRACED:若子进程进入暂停状态,则马上返回,但子进程的结束状态不予以理会
+	/*}}}*/
+
+# mkfifo
+snippet mkfifo
+	mkfifo(${1:const char *pathname}, ${2:mode_t mode});    /* 建立实名管道 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1 失败原因存于errno中
+	*pathname--
+	*         -1:等待任何子进程,相当于wait();
+	*          0:等待进程组识别码与目前进程相同的子进程(相当于parent_pid)
+	*   <-1 | >0:等待进程组识别码为pid绝对值的子进程
+	*status----保存子进程的结束状态,一般为NULL
+	*options---0:阻塞等待子进程结束
+	*          WNOHANG:若pid指定的子进程没有结束,则返回0,不予以等待.若结束,则返回该子进程的ID
+	*          WUNTRACED:若子进程进入暂停状态,则马上返回,但子进程的结束状态不予以理会
+	/*}}}*/
+
+# inet
+snippet inet
+	inet_aton/*{{{*/
+	inet_addr
+	inet_ntoa/*}}}*/
+
+# inet_aton
+snippet inet_aton
+	inet_aton(${1:const char *string}, ${2:struct in_addr *addr});    /* 是一个改进的方法来将一个字符串IP地址转换为一个32位的网络序列IP地址 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)0
+	*     并没有将错误码存在errno中
+	*#include <arpa/inet.h>
+	*#include <sys/socket.h>
+	*#include <netinet/in.h>
+	*string-----"192.168.1.1"
+	*addr-------typedef uint32_t in_addr_t;
+	            struct in_addr{
+					in_addr_t s_addr;
+				};
+				addr.s_addr的值将会是网络字节序(默认是大端排序)
+	/*}}}*/
+
+# inet_addr
+snippet inet_addr
+	inet_addr(${1:const char *string});
+	*成功:(in_addr_t)返回的是网络字节序(默认是大端排序)/*{{{*/
+	*出错:(int)0
+	*     并没有将错误码存在errno中
+	*#include <arpa/inet.h>
+	*#include <sys/socket.h>
+	*#include <netinet/in.h>
+	*string-----"192.168.1.1"
+	/*}}}*/
+
+# inet_ntoa
+snippet inet_ntoa
+	inet_ntoa(${1:strcut in_addr in});    /* 将一个IP转换成一个*/
+	*成功:(char *)返回一个字符指针,指向一块存储着点分格IP地址的静态缓冲区(默认是大端排序)/*{{{*/
+	*出错:(char *)NULL
+	*     并没有将错误码存在errno中
+	*#include <arpa/inet.h>
+	*#include <sys/socket.h>
+	*#include <netinet/in.h>
+	*in---------typedef int32_t in_addr_t;
+	            struct in_addr{
+					in_addr_t s_addr;
+				};
+	*注意:参数是一个结构体
+	/*}}}*/
+
+# socket
+snippet socket
+	socket(${1:int domain}, ${2:int type}, ${3: int protocol});    /* 应用程序调用socket函数来创建一个能够进行网络通信的套接字 */
+	*成功:(int)返回新创建的套接字的描述符/*{{{*/
+	*出错:(int)INVALID_SOCKET(Linux下返回-1)
+	*     并没有将错误码存在errno中
+	*#include <sys/types.h>
+	*#include <sys/socket.h>
+	*domain-----指定应用程序使用的通信协议的协议族
+	*           AF_INET:需要TCP/IP协议(需要走网线)
+	*           AF_UNIX或上AF_LOCAL或PF_UNIX或PF_LOCAL本机内部通信协议
+	*struct sockaddr_un {
+	*	sa_family_t sun_family;	/* AF_UNIX */
+	*	char sun_path[UNIX_PATH_MAX];	/* pathname */
+	*};
+	*type-------指定要创建的套接字类型
+	*           SOCK_STREAM:流套接字类型(tcp)
+	*           SOCK_DGRAM:数据报套接字类型(udp)
+	*           SOCK_RAW:原始套接字
+	*protocol---指定应用程序使用的通信协议,此参数可以指定单个协议系列中的不同传输协议
+	*           一般取值为0,系统会根据套接字的类型决定使用的传输层协议
+	*说明:每一个进程的进程空间时都有一个套接字描述符表,该表中存放着套搠字描述符和套接字数据结构的对应关系
+	*     该表中有一个字段存放新创的套接字的描述符,另一个字希存放套接字数据结构的地址,因址根据套接字描述符就可以找到其对应的套搪字数据结构.
+	*     每个进程在自己的进程空间里都有一个套接字描述符表但是套接字数据结构都是在操作系统的内核缓冲里
+	/*}}}*/
+
+# bind
+snippet bind
+	bind(${1:int socket}, ${2:const struct sockaddr *address}, ${3:socklen_t address_len});    /* 用于套接字绑定到一个已知的地址上 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)SOCKET_ERROR
+	*     并没有将错误码存在errno中
+	*#include <sys/socket.h>
+	*socket--------是一个套接字
+	*sockaddr *address-------(通用地址协议)是一个sockaddr结构指针,该结构中包含了要结合的地址和端口号
+	*sockaddr_in *address----(internet协议地址结构)
+	*		                 注意:当用Internet协议地址结构时需要强制类型转换
+	*struct sockaddr_in {
+	*    sa_family_t sin_family;    /* 内部网络协议(AF_INET(internet协议)) */
+	*    __be16 sin_port;           /* 端口号(需要htons) */
+	*    struct in_addr	sin_addr;   /* 网络地址(需要inet_addr) */
+	*
+	*    /* Pad to size of `struct sockaddr'. */
+	*    unsigned char __pad[__SOCK_SIZE__ - sizeof(short int) -
+	*     		sizeof(unsigned short int) - sizeof(struct in_addr)];
+	*};
+	*struct in_addr {
+	*	__be32	s_addr;
+	*};
+	*address_len---确定address缓冲区的长度
+	*           一般取值sizeof(...)
+	*说明:每一个进程的进程空间时都有一个套接字描述符表,该表中存放着套搠字描述符和套接字数据结构的对应关系
+	*     该表中有一个字段存放新创的套接字的描述符,另一个字希存放套接字数据结构的地址,因址根据套接字描述符就可以找到其对应的套搪字数据结构.
+	*     每个进程在自己的进程空间里都有一个套接字描述符表但是套接字数据结构都是在操作系统的内核缓冲里
+	/*}}}*/
+
+# listen
+snippet listen
+	listen(${1:int socket}, ${2:int backlog});    /* 创建一个套接口并监听申请的连接 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)SOCKET_ERROR
+	*     并没有将错误码存在errno中
+	*#include <sys/socket.h>
+	*socket--------用于标识一个捆绑未连接套接口的描述字
+	*backlog:等待连接队列的最大长度
+	*说明:listen仅适用于支持连接的套接口,如SOCK_STREAM类型的
+	*     申请进入的连接请求被确认,并排队等待被接受
+	*     如果当一个连接请求到来时,队列已满,那么客户收到一个WASECONNREFUSED错误
+	/*}}}*/
+
+# accept
+snippet accept
+	accept(${1:int socket}, ${2:struct sockaddr *restrict addr}, ${3:socklen_t *restrict addrle});    /* 将从连接请求队列中获得连接信息,创建新的套接字,并返回该套接字的文件描述符 */
+	*成功:(int)返回新套接字描述符/*{{{*/
+	*出错:(int)返回INVALID_SOCKET
+	*#include <sys/socket.h>
+	*socket--------是一个处于监听状态的流套接字
+	*addr----------返回所连接的客户进程的协议地址
+	*              可以为NULL
+	*addrle--------返回该地址(addr)的大小
+	*              可以为NULL
+	*说明:服务程序调用accept函数从处于监听状态的流套接字的客户连接请求队列中取出排在最前的一个客户请求
+	*     并且创建一个新的套接字来与客户套接字创建连接通道
+	/*}}}*/
+
+# connect
+snippet connect
+	connect(${1:int sockfd}, ${2:struct sockaddr *addr}, ${3:socklen_t addrlen});    /* 用于创建与指定外部端口的连接 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1
+	*#include <sys/socket.h>
+	*#include <sys/types.h>
+	*sockfd--------套接字描述符
+	*sockaddr *address-------(通用地址协议)是一个sockaddr结构指针,该结构中包含了要结合的地址和端口号
+	*sockaddr_in *address----(internet协议地址结构)
+	*		                 注意:当用Internet协议地址结构时需要强制类型转换
+	*struct sockaddr_in {
+	*    sa_family_t sin_family;    /* 内部网络协议(AF_INET(internet协议)) */
+	*    __be16 sin_port;           /* 端口号(需要htons) */
+	*    struct in_addr	sin_addr;   /* 网络地址(需要inet_addr) */
+	*
+	*    /* Pad to size of `struct sockaddr'. */
+	*    unsigned char __pad[__SOCK_SIZE__ - sizeof(short int) -
+	*     		sizeof(unsigned short int) - sizeof(struct in_addr)];
+	*};
+	*struct in_addr {
+	*	__be32	s_addr;
+	*};
+	*addrlen--------sockaddr的长度,可以通过sizeof()获得
+	*说明:指定一个未连接的数数报或流类套接口,如套接口未消被捆绑,则系统赋给本地关联一个唯一的值,且设置套接口为已捆绑
+	*     对于SOCK_DGRAM(数据报套接字类型),则设置成一个缺省的目的地址,并用它来进行后续的send()与recv()调用
+	/*}}}*/
+
+# send
+snippet send
+	send(${1:int socket}, ${2:const void *buffer}, ${3:size_t length}, ${4:int flags});    /* 经套接字传送消息 */
+	*成功:(ssize_t)0/*{{{*/
+	*出错:(ssize_t)-1
+	*#include <sys/socket.h>
+	*socket-----------参数指定发送端套接字描述符
+	*buffer-----------指明一个存放应用程式要发送数据的缓冲区
+	*length-----------指明实际要发送的数据的字节数
+	*flags------------一般置0
+	*                 MSG_DONTWAIT允许非阻塞操作(等价使用O_NONBLOCK)
+	*                 MSG_DONTROUTE勿将数据路由出本地网络
+	*说明:send不包含传送失败的提示信息,如果检测到本地错误将返回-1
+	*注意:send成功返回,并不一定表示连接另一端的进程接收了数据,所保证的公是当send成功返回时,数据已经无误地发送到网络上
+	/*}}}*/
+
+# recv
+snippet recv
+	recv(${1:int socket}, ${2:void *buffer}, ${3:size_t length}, ${4:int flags});    /* 从一个套接口接收数据 */
+	*成功:(ssize_t)返回其实际copy的字节数/*{{{*/
+	*出错:(ssize_t)copy时出错:SOCKET_ERROR
+	*              在等待协议接收数据时网络中断了,那么它返回0
+	*              Unix系统下,那么调用recvr的进程会接收到一个SIGPIPI信号,进程对该信号的默认处理是进程终止
+	*#include <sys/socket.h>
+	*socket-----------一个标识已连接套接口的描述字
+	*buffer-----------用于接收数据的缓冲区
+	*length-----------缓冲区长度
+	*flags------------指定调用方式
+	*说明:如果socket接收缓冲区中没有数据或者协议正在接收数据,那么recv就一直等待,直到协议把数据接收完毕
+	*     当协议把数据接收完毕,recv就殷s的接收缓冲中的数据copy到buf中
+	*注意:recv函数仅仅是copy数据,真正的接收数据是协议来完成的
+	/*}}}*/
+
+# recvfrom
+snippet recvfrom
+	recvfrom(${1:int socket}, ${2:void *restrict buffer}, ${3:size_t length}, ${4:int flags}, ${5:struct sockaddr *restrict address}, ${6:socklen_t *restrict address_len});    /* 从一个套接口接收数据 */
+	*成功:(ssize_t)正确接收返回接收到的字节数/*{{{*/
+	*出错:(ssize_t)-1
+	*#include <sys/socket.h>
+	*socket-----------标识一个已连接套接口的描述字
+	*buffer-----------接收数据缓冲区长度
+	*length-----------缓冲区长度
+	*flags------------调用操作方式,可以通过or操作连在一起 一般设0
+	*                 MSG_DONTWAIT允许非阻塞操作(等价使用O_NONBLOCK)
+	*                 MSG_ERRQUEUE指示应从套接字的错误队列上接收错误值,依据不同的协议,错误值
+	*address和address_len参考bind函数
+	*address_len为地址
+	/*}}}*/
+
+# sendto
+snippet sendto
+	sendto(${1:int socket}, ${2:const void *buffer}, ${3:size_t length}, ${4:int flags}, ${5:const struct sockaddr *address}, ${6:socklen_t address_len});    /* 从一个套接口接收数据 */
+	*成功:(ssize_t)成功则返回实际传送出去的字符数/*{{{*/
+	*出错:(ssize_t)-1
+	*#include <sys/socket.h>
+	*socket--------标识一个已连接套接口的描述字
+	*buffer--------发送数据缓冲区长度
+	*length--------缓冲区长度
+	*flags---------调用操作方式,可以通过or操作连在一起 一般设0
+	*address_len---可以sizeof();
+	*注意:UDP中没有写阻塞,有读阻塞
+	*address和length参考bind函数
+	/*}}}*/
+
+# singal
+snippet signal
+	signal(${1:int signum}, ${2:sighandler_t handler});    /* 设置某一信号的对应动作 */
+	*成功:(sighandler_t)返回先前的信号处理函数指针/*{{{*/
+	*出错:(sighandler_t)SIG_ERR(-1)
+	*typedef void(*sighandler_t)(int);
+	*#include <signal.h>
+	*signum-----指明了所要处理的信号类型,它可以取除了SIGKILL和SIGSTOP外的任何一种信号
+	*handler----描述了与信号关联的动作,它可以取以下三种值:
+	*           SIG_IGN:表示忽略该信号,进程会忽略类型为sig的信号当忽略SIGCHLD的信号时,内核会帮子进程收尸
+	*           SIG_DFL:表示恢复系统对信号的默认处理
+	*           void func(int sig)
+	*注意:当一个信号的信号处理函数执行时，如果进程又接收到了该信号，该信号会自动被储存而不会中断信号处理函数的执行
+	*     直到信号处理函数的执行完毕再重新调用相应的牌函数.
+	*     但是如果在信号处理函数执行时进程收到了其它类型的信号,该函数的执行就会被中断
+	/*}}}*/
+
+# alarm
+snippet alarm
+	alarm(${1:unsigned int seconds});    /* 它可以在中设置一个定时器,当定时器指定的时间到时,第向进程发送SIGALRM信号 */
+	*成功:(unsigned int)调用此函数前,已经设置了闹钟时间,则返回上一个闹钟时间的剩余时间,否则返回0/*{{{*/
+	*出错:(sighandler_t)-1
+	*#include <unistd.h>
+	*seconds-----秒数 一个进程只能有一个闹钟时间,即为最新时间
+	*可以用pause()来等待信号的到来
+	*注意:经过指定的秒数后,信号由内核产生,由于进程高度的延迟,所以进程得到控制从而能够处理该信号还需要一些时间
+	/*}}}*/
+
+# select
+snippet select
+	select(${1:int nfds}, ${2:fd_set *readfds}, ${3:fd_set *writefds}, ${4:fd_set *exceptfds}, ${5:struct timeval *timeout});    /* 检测一组文件描述符是否可用并以阻塞方式等待 */
+	*成功:(int)调用返回就绪状态并且已经包含在FD_SET结构中的描述字总数/*}}}*/
+	*出错:(int)如果超时则返回0,否则的话,返回SOCKET_ERROR
+	*     -1时,所有描述符集清0
+	*      0时,超时不修改任何描述符集
+	*     非0时,内核会每次修改3个描述符集里的值,把不可用的文件描述符的位数置0
+	*重点:所以需要定义临时描述符集tempfds来备份
+	*#include <sys/select.h>
+	*#include <sys/time.h>
+	*#include <sys/types.h>
+	*#include <unistd.h>
+	*nfds:------是一个整数值,是指集合中所有文件描述符的范围,即所有文件描述符的最大值加1
+	*readfds----(可选)指针,指向一组等待可读性检查的套接口
+	*           对于listen状态,若有连接请求到达该套接口便被标识为可读,这样accept调用保证可以无阻塞完成
+	*           对于其他套接口而言,可读性意味着有排队数据供读取
+	*writefds---(可选)指针,指向一组等待可写性检查的套接口
+	*exceptfds--(可选)指针,指向一组等待错误检查的套接口
+	*timeout----select()最多等待时间超时则不阻塞,对阻塞操作则为NULL
+	*           在函数内部一直修改timeout的值
+	*struct timeval {
+	*    long    tv_sec;	       /* seconds */
+	*    long    tv_usec;        /* microseconds */
+	*};
+	*时间到了返回0
+	*void FD_CLR(int fd, fd_set *set);
+	*int  FD_ISSET(int fd, fd_set *set);
+	*void FD_SET(int fd, fd_set *set);
+	*void FD_ZERO(fd_set *set);
+	*1.创建文件描述符集合
+	*2.清空文件描述符集合,并且把需要检测的文件描述符添加到集合中去
+	*3.调用select检测多个文件描述符是否可用,如果用1到多个文件描述符可用了,select停止阻塞
+	*4.FD_ISSET查询哪些文件描述符可用了,做相应的处理(读写操作)
+	/*}}}*/
+
+# fcntl
+snippet fcntl
+	fcntl(${1:int fd}, ${2:int cmd}, ${3:long arg});    /* 非阻塞IO通信模型 */
+	*fcntl(int fd, int cmd);/*}}}*/
+	*#include <unistd.h>
+	*#include <fcntl.h>
+	*成功:(int)F_DUPFD:返回新的文件描述符
+	*          F_GETFD | F_GETFL:返回相应标志    /* 所以不需要第3个参数 */
+	*          F_GETOWN:返回一个正的进程ID或负的进程组ID
+	*出错:(int)所有命令都返回-1
+	*fd-----代表欲设置的文件描述符
+	*cmd----代表打算操作的指令
+	*       F_GETFL:取得文件描述词状态旗标,此旗标为open的参数flags
+	*       F_SETFL:设置文件描述词状态旗标,参数arg为新旗标,但只允许O_APPEND | O_NONBLOCK | O_ASYNC位的改变,其他信的改变将不受影响
+	*       非阻塞IO设置过程:
+	*       listen(listenfd, num);
+	*       flag = 0;
+	*       fcntl(listenfd, F_SETFL, flag | O_NONBLOCK);
+	*       while(1){    /* 非阻塞IO基本都需要轮询while */
+	*       connect = accept(listenfd, ..., ...);
+	*       if(connect == -1){
+	*       	if(errno == EAGAIN)
+	*           {
+	*               /* 此时是相当于没有错误,只是没有数据 */
+	*               sleep(1);
+	*               continue;
+	*           }
+	*           else{
+	*               perror("ACCEPT");    /* 此时是出现了错误 */
+	*               exit(EXIT_FAILURE);
+	*           }
+	*       }
+	*       else{
+	*            errno = 0;    /* 此是是里面有数据 */
+	*            break;
+	*       }
+	*       }
+	/*}}}*/
+
+# fcntlsignal
+snippet fcntlcignal
+	fcntl(${1:int fd}, ${2:int cmd}, ${3:long arg});    /* 异步IO通信模型又叫信号驱动IO */
+	*成功:(int)F_DUPFD:返回新的文件描述符/*{{{*/
+	*          F_GETFD | F_GETFL:返回相应标志   /* 所以不需要第3个参数 */
+	*          F_GETOWN:返回一个正的进程ID或负的进程组ID
+	*出错:(int)所有命令都返回-1
+	*1.signal注册SIGIO信号处理函数去处理数据 signal(SIGIO, handler_io);
+	*2.fcntl的F_SETFL设置文件描述符为异步的O_ASYNC fcntl(listenfd, F_SETFL, flag | O_ASYNC);
+	*3.fcntl的F_SETOWN设置拥有者为当前进程 fcntl(listenfd, F_SETOWN, getpid());
+	/*}}}*/
+
+# fcntlclock
+snippet fcntlclock
+	fcntl(${1:int fd}, ${2:int cmd}, ${3:struct flock *lock});    /* 对套接口或文件描述符上锁或解锁 */
+	*成功:(int)0/*{{{*/
+	*出错:(int)-1 F_SETLK错误代码为EACCES或EAGIN
+	*             F_SETLKW错误代码为EINTR
+	*cmd----代表打算操作的指令
+	*       F_GETLK:取得文件锁定的状态
+	*       F_SETLK:设置文件锁定的状态,此时flcok结构的l_type值必须是F_RDLCK|F_WRLCK|F_UNLCK,如果无法建立锁定,则返回-1
+	*       F_SETLKW:同上,但是无法建立锁定时,它会一直等到锁定动作成功为止.若在等待锁定的过程中被信号中断时,返回-1
+	*struct flock {
+	*	short	l_type;    /* F_RDLCK 建立一个供读取用的锁定 */
+	*                      /* F_WRLCK 建立一个供定入用的锁定 */
+	*                      /* F_UNLCK 删除之前建立的锁定 */
+	*	short	l_whence;  /* SEEK_SET 以文件开头为锁定的起始位置 */
+	*                      /* SEEK_CUR 以目前文件读写位置为锁定的起始位置 */
+	*                      /* SEEK_END 以文件结尾为锁定的起始位置 */
+	*	__kernel_off_t	l_start;    /* 表示相对l_whence位置的偏移量,两者一起确定锁区域的开始位置*/
+	*	__kernel_off_t	l_len;    /* 表示锁定区域的长度,为0表示从起点开始直到最大可能偏移量为止,不管在后面增加多少数据都在锁的范围内 */
+	*	__kernel_pid_t	l_pid;    /* 哪个进程持有这个锁 */
+	*	__ARCH_FLOCK_PAD
+	*};
+	/*}}}*/
+
+# poll
+snippet poll
+	poll(${1:struct pollfd *fds}. ${2:nfds_t nfds}, ${3:int timeout});    /* 检测一组文件描述符是否可用并以阻塞方式等待  */ 
+	*成功(int)返回正值时,代表满足响应事件的文件描述符的个数
+	*         返回0则代表在规定时间内没有事件发生
+	*失败(int)返回为负则应该立即查看errno,因为这代表有错误发生
+	*fds-----指向结构体struct pollfd列表的指针,其中包括了你想测试的文件描述符和事件
+	*struct pollfd {
+	*	int fd;    /* 文件描述符 */
+	*	short events;    /* 等待的需要测试事件 */
+	*	short revents;   /* 实际发生了的事件,也就是返回结果 */
+	*};
+	*timeout----是poll函数调用阻塞的时间,单位:毫秒
+	*           0时poll函数立即返回
+	*          -1时poll一直挂起直到一个指定事件发生
+	*说明:Linux中的字符设备驱动中有一个函数,Linux2.5.44版本后被epoll取代
+	*     此函数在系统调用select内部被使用
+	*     poll和select实现功能差不多,但poll效率高,以后要多用poll
+
+# getsockopt
+snippet getsockopt
+	getsockopt(${1:int sockfd}, ${2:int level}, ${3:int optname}, ${4:void *optval}, ${5:socklen_t *optlen});    /* 获取一个套接口选项 */
+	*成功(int)返回0/*{{{*/
+	*失败(int)返回SOCKET_ERROR错误
+	*             应用程序可通WASAGetLastError()获取
+	*sockfd----一个标识套接口的描述字
+	*level-----选项定义的层次,支持的层次仅有SOL_SOCKET和IPPROTO_TCP和IPPROTO_IP
+	*optname---需的套接口选项
+	*optval----指针,指向存放所获得选项值的缓冲区
+	*optlen----指针,指向optval缓冲区的长度值
+	*说明:该函数用于获取任意类型,任意状态套接口的选项当前值,并把结果存入optval
+	* IPPROTO_TCP
+	*   TCP_MAXSEG     int             TCP最大数据段的大小
+	*   TCP_NODELAY    int             不使用Nagle算法
+	* IPPROTO_IP
+	*   IP_HDRINCL     int             在数据包中包含IP首部
+	*   IP_IPTINOS     int             IP首部选项     include中查找不到
+	*   IP_TOS                         服务类型
+	*   IP_TTL         int             生存时间
+	*
+	* SOL_SOCKET
+	*   SO_SNDBUF      int             发送缓冲区大小
+	*	SO_RCVBUF      int             接收缓冲区大小
+	*	SO_DEBUG       BOLL            允许调试
+	*	SO_ERROR       int             获取错误状态并清除
+	*	SO_TYPE        int             套接口类型(如SOCK_STREAM)
+	*   SO_BROADCAST   int             允许发送广播数据
+	*   SO_KEEPALIVE   int             保持连接
+	*   SO_RCVLOWAT    int             接收缓冲区下限
+	*   SO_SENLOWAT    int             发送缓冲区下限
+	*   SO_RCVTIMEO    struct timeval  接收超时
+	*   SO_SENTIMEO    struct timeval  发送超时
+	*   SO_REUSEADDR   int             允许重用本地和端口
+	*	SO_DONTROUTE   BOLL            不查找路由
+	*   SO_LINGER      struct linger   延迟关闭连接
+	*   SO_OOBINLINE   int             带外数据放入正常数据流
+	/*}}}*/
+
+# setsockopt
+snippet setsockopt
+	setsockopt(${1:int socket}, ${2:int level}, ${3:int option_name}, ${4:const void *option_value}, ${5:socklen_t option_len});    /* 设置套接字的选项 */
+	*成功(int)返回0/*{{{*/
+	*失败(int)返回SOCKET_ERROR错误
+	*             应用程序可通WASAGetLastError()获取
+	*sockfd----一个标识套接口的描述字
+	*level-----选项定义的层次,支持的层次仅有SOL_SOCKET和IPPROTO_TCP和IPPROTO_IP
+	*optname---需的套接口选项
+	*optval----指针,指向存放所获得选项值的缓冲区
+	*optlen----optval缓冲区长度(sizeof())
+	*说明:该函数用于获取任意类型,任意状态套接口的选项当前值,并把结果存入optval
+	* IPPROTO_TCP
+	*   TCP_MAXSEG     int             TCP最大数据段的大小
+	*   TCP_NODELAY    int             不使用Nagle算法
+	* IPPROTO_IP
+	*   IP_HDRINCL     int             在数据包中包含IP首部
+	*   IP_IPTINOS     int             IP首部选项     include中查找不到
+	*   IP_TOS                         服务类型
+	*   IP_TTL         int             生存时间
+	*IP_ADD_MEMBERSHIP struct ip_mreq command 设置组播地址和成员的地址
+	*struct ip_mreq
+	*{
+	*/* 组播地址的设置 */
+	*	struct in_addr imr_multiaddr;
+	*/* 成员的地址 */
+	*	struct in_addr imr_interface;
+	*};
+	*
+	* SOL_SOCKET
+	*   SO_SNDBUF      int             发送缓冲区大小
+	*	SO_RCVBUF      int             接收缓冲区大小
+	*	SO_DEBUG       BOLL            允许调试
+	*	SO_ERROR       int             获取错误状态并清除
+	*	SO_TYPE        int             套接口类型(如SOCK_STREAM)
+	*   SO_BROADCAST   int             允许发送广播数据
+	*   SO_KEEPALIVE   int             保持连接
+	*   SO_RCVLOWAT    int             接收缓冲区下限
+	*   SO_SENLOWAT    int             发送缓冲区下限
+	*   SO_RCVTIMEO    struct timeval  接收超时
+	*   SO_SENTIMEO    struct timeval  发送超时
+	*   SO_REUSEADDR   int             允许重用本地和端口
+	*	SO_DONTROUTE   BOLL            不查找路由
+	*   SO_LINGER      struct linger   延迟关闭连接
+	*   SO_OOBINLINE   int             带外数据放入正常数据流
+	/*}}}*/
+
+# tempfile
+snippet tempfile
+	tmpnam/*{{{*/
+	tmpfile
+	mktemp
+	mkstemp/*}}}*/
+snippet tmpnam
+	tmpnam(${1:char *s});
+	*成功(char *)文件名/*{{{*/
+	*失败(char *)NULL
+	*s-----可以是NULL或者一个栈地址
+	*      s为NULL时,返回一个内部静态内在地址(保存了临时文件名),当下一次以NULL调用函数的时候,该会被修改
+	*      栈地址必须有L_tmpnam(20)内存,这样名字保存在数组里面stdio_lim.h
+	*      可以被一个程序最多调用TMP_MAX(238328),每一次都会返回一个不同的文件名
+	/*}}}*/
+snippet tmpfile
+	tmpfile();    /* 以wb+形式创建一个临时二进制文件 */
+	*成功(FILE *)文件流指针/*{{{*/
+	*失败(FILE *)NULL
+	/*}}}*/
+snippet mktemp
+	mktemp(${1:char *template});    /* 创建唯一临时文件函数 */
+	*成功(char *)文件名/*{{{*/
+	*失败(char *)NULL
+	*template-----所指的文件名字符串中最后六个字符必须是xxxxxx
+	*而mkstemp跟它的区别就是它返回一个文件描述符
+	/*}}}*/
+	
+# dir
+snippet dir
+	opendir/*{{{*/
+	readdir
+	closedir/*}}}*/
+# id
+snippet id
+	getuid/*{{{*/
+	geteuid
+	getpwuid
+	getpwnam
+	getgrgid
+	getgrnam
+	getopt    /* 短参有关的函数 */
+	truncate
+	access/*}}}*/
+
+# 标注的快捷方式
+snippet	/*
+	/* ${1:} */
+snippet	/**
+	/**
+	 * ${1:}
+	 *
+	 */
