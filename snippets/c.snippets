@@ -268,7 +268,40 @@ snippet msgctl
 snippet sem
 	semget/*{{{*/
 	semop
+	sem_init
+	sem_post
+	sem_wait
 	semctl/*}}}*/
+# sem_init
+snippet sem_init
+	sem_init(${1:sem_t *sem}, ${2:int pshared}, ${3:unsigned int value});    /* 初始化信号量 */
+	*成功:(int)返回0/*{{{*/
+	*出错:(int)-1, 错误原因存于errno中
+	*#include <semaphore.h>
+	*sem--------sem_t 类型的匿名信号量
+	*pshared----指明信号量是由进程内线程共享，还是由进程之间共享
+				为0,那么信号量将被进程内的线程共享，并且应该放置在这个进程的所有线程都可见的地址上（如全局变量，或者堆上动态分配）
+				非0,信号量将在进程之间共享，并且该定位共享内存区域
+	*value------指定信号量的初始值
+	/*}}}*/
+# sem_wait
+snippet sem_wait
+	sem_wait(${1:sem_t *sem});    /* 相当于P操作，即申请资源 */
+	*说明:原子操作，如果sem大于1,则减一，如果为0则堵塞等待
+	*成功:(int)返回0/*{{{*/
+	*出错:(int)-1, 错误原因存于errno中,sem值不改变
+	*#include <semaphore.h>
+	*sem--------sem_t 类型的匿名信号量的取址
+	/*}}}*/
+
+snippet sem_post
+	sem_post(${1:sem_t *sem});    /* 相当于V操作，即释放资源 */
+	*说明:原子操作，给信号量的值加一个1
+	*成功:(int)返回0/*{{{*/
+	*出错:(int)-1, 错误原因存于errno中,sem值不改变
+	*#include <semaphore.h>
+	*sem--------sem_t 类型的匿名信号量的取址
+	/*}}}*/
 
 # semget
 snippet semget
@@ -330,6 +363,10 @@ snippet pthread
 	pthread_join
 	pthread_exit
 	pthread_cancel
+	pthread_mutex_lock
+	pthread_mutex_unlock
+	pthread_mutex_destroy
+	pthread_cond_destroy
 	pthread_setcancelstate
 	pthread_setcanceltype/*}}}*/
 
