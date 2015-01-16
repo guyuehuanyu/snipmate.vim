@@ -115,7 +115,7 @@ snippet .
 # debug
 snippet dbf
 	#ifdef MY_DBF
-	printf("@MY_DEBUG@file:%s\tfunc:%s\tline:%d\n", __FILE__, __func__, __LINE__);
+	printf("\033[31mfile:%s\tfunc:%s\tline:%d\033[0m\n", __FILE__, __func__, __LINE__);
 	#endif
 
 snippet dbk
@@ -369,6 +369,63 @@ snippet pthread
 	pthread_cond_destroy
 	pthread_setcancelstate
 	pthread_setcanceltype/*}}}*/
+# pthread_mutex_init
+snippet pthread_mutex_init
+	pthread_mutex_init(${1:pthread_mutex_t *restrict mutex},${2:const pthread_mutexattr_t *restrict attr});
+	*成功:(int)0/*{{{*/
+	*出错:(int)则返回错误编号
+	*mutex-------如果互斥锁类型为 PTHREAD_MUTEX_ERRORCHECK，则会提供错误检查。如果某个线程尝试重新锁定的互斥锁已经由该线程锁定，则将返回错误。如果某个线程尝试解除锁定的互斥锁不是由该线程锁定或者未锁定，则将返回错误。
+	*			 如果互斥锁类型为 PTHREAD_MUTEX_RECURSIVE，则该互斥锁会保留锁定计数这一概念。线程首次成功获取互斥锁时，锁定计数会设置为 1。线程每重新锁定该互斥锁一次，锁定计数就增加 1。线程每解除锁定该互斥锁一次，锁定计数就减小 1。 锁定计数达到 0 时，该互斥锁即可供其他线程获取。如果某个线程尝试解除锁定的互斥锁不是由该线程锁定或者未锁定，则将返回错误。
+	*			 如果互斥锁类型是 PTHREAD_MUTEX_DEFAULT，则尝试以递归方式锁定该互斥锁将产生不确定的行为。对于不是由调用线程锁定的互斥锁，如果尝试解除对它的锁定，则会产生不确定的行为。如果尝试解除锁定尚未锁定的互斥锁，则会产生不确定的行为。
+	*初始化:对于静态分配的互斥量, 可以把它设置为PTHREAD_MUTEX_INITIALIZER, 或者调用pthread_mutex_init.
+	*	 	对于动态分配的互斥量, 在申请内存(malloc)之后, 通过pthread_mutex_init进行初始化, 并且在释放内存(free)前需要调用pthread_mutex_destroy.
+	*attr--------如果使用默认的属性初始化互斥量, 只需把attr设为NULL
+	/*}}}*/
+# pthread_mutex_destroy
+snippet pthread_mutex_destroy
+	pthread_mutex_destroy(${1:pthread_mutex_t *restrict mutex},${2:const pthread_mutexattr_t *restrict attr});
+	*成功:(int)0/*{{{*/
+	*出错:(int)则返回错误编号
+	*attr--------如果使用默认的属性初始化互斥量, 只需把attr设为NULL
+	/*}}}*/
+# pthread_mutex_lock
+snippet pthread_mutex_lock
+	pthread_mutex_lock(${1:pthread_mutex_t *mutex}); /* 线程上锁，另一个线程将阻塞，直到该互斥锁变为可用为止 */ 
+# pthread_mutex_unlock
+snippet pthread_mutex_unlock
+	pthread_mutex_unlock(${1:pthread_mutex_t *mutex}); /* 线程解锁，另一个线程将可用 */ 
+# pthread_cond_init
+snippet pthread_cond_init
+	pthread_cond_init(${1:pthread_cond_t *__cond},${2:__const pthread_condattr_t *__cond_attr}) /* 利用线程间共享的全局变量进行同步的一种条件变量的初始化 */ 
+	*成功:(int)0/*{{{*/
+	*出错:(int)则返回错误编号
+	*cond--------是指向结构pthread_cond_t的指针
+	*attr--------是指向结构pthread_condattr_t的指针
+	*            pthread_condattr_t是条件变量的属性结构，和互斥锁一样我们可以用来设置条件变量是进程内可以用还是进程间可用.
+	*            默认值是PTHREAD_ PROCESS_PRIVATE，即此条件变量被同一进程内的各个线程使用；如果选择为PTHREAD_PROCESS_SHARED则为多个进程间各线程公用。
+	*注意:初始化条件变量只有未被使用时才能重新初始化或被释放
+	/*}}}*/
+# pthread_cond_destroy
+snippet pthread_cond_destroy
+	pthread_cond_destroy(${1:pthread_cond_t *__cond}) /* 注销一个条件变量 */ 
+	*成功:(int)0/*{{{*/
+	*出错:(int)则返回错误编号
+	*注意：注销一个条件变量需要调用pthread_cond_destroy()，只有在没有线程在该条件变量上等待的时候才能注销这个条件变量，否则返回EBUSY。
+	*      因为Linux实现的条件变量没有分配什么资源，所以注销动作只包括检查是否有等待线程
+	/*}}}*/
+# pthread_cond_wait
+snippet pthread_cond_wait
+	pthread_cond_wait(${1:pthread_cond_t *cond}, ${2:pthread_mutex_t *mutex}) /* 解锁，进入等待队列，等待条件变量，唤起线程，并且mutex加锁 */ 
+	*成功:(int)0/*{{{*/
+	*出错:(int)则返回错误编号
+	*cond--------是指向结构pthread_cond_t的指针
+	*mutex-------是指向结构pthread_mutex_t的指针
+	*	条件等待pthread_cond_wait()和计时等待pthread_cond_timedwait()，其中计时等待方式如果在给定时刻前条件没有满足，则返回ETIMEOUT，结束等待，其中abstime以与time()系统调用相同意义的绝对时间形式出现，0表示格林尼治时间1970年1月1日0时0分0秒。
+	*无论哪种等待方式，都必须和一个互斥锁配合，以防止多个线程同时请求pthread_cond_wait()（或pthread_cond_timedwait()，下同）的竞争条件（Race Condition）。
+	*	mutex互斥锁必须是普通锁（PTHREAD_MUTEX_TIMED_NP）或者适应锁（PTHREAD_MUTEX_ADAPTIVE_NP），且在调用pthread_cond_wait()前必须由本线程加锁（pthread_mutex_lock()），而在更新条件等待队列以前，mutex保持锁定状态，并在线程挂起进入等待前解锁。在条件满足从而离开pthread_cond_wait()之前，mutex将被重新加锁，以与进入pthread_cond_wait()前的加锁动作对应
+	*	激发条件有两种形式，pthread_cond_signal()激活一个等待该条件的线程，存在多个等待线程时按入队顺序激活其中一个；而pthread_cond_broadcast()则激活所有等待线程。
+	/*}}}*/
+
 
 # pthread_create
 snippet pthread_create
