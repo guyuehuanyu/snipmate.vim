@@ -1,0 +1,231 @@
+snippet cond
+	指令://{{{
+	{cond}后缀	 测试状态位	         描        述 
+	EQ		       Z置位		        相等 
+	NE		       Z清零		        不相等 
+	CS/HS	       C置位		        无符号数大于或等于 
+	CC/LO	       C清零		        无符号数小于 
+	MI		       N置位		        负数 
+	PL		       N清零		        正数或0 
+	VS		       V置位		        溢出 
+	VC		       V清零		        没有溢出 
+	HI		       C置位，Z清零	    无符号数大于 
+	LS		       C清零，Z置位	    无符号数小于或等于 
+	GE		       N等于V		        带符号数大于或等于 
+	LT		       N不等于V		    带符号数小于 
+	GT		       Z清零，(N等于V)    带符号数大于 
+	LE		       Z置位或(N不等于V)	带符号数小于或等于 
+	AL		       任何		        无条件执行(指令默认条件)	
+	//}}}
+snippet khlf    "跳转指令
+	*二、使用专门的跳转指令
+	*  ARM 指令集中的跳转指令可以完成从当前 指令向前或向后的32MB的地址空间的跳转
+	*  包括以下4 条指令：
+	*  B         跳转指令。 
+	*  BL        带返回的跳转指令。
+	*  BLX       带返回和状态切换的跳转指令。
+	*  BX        带状态切换的跳转指令。
+	*一、直接向程序计数器pc定稿跳转地址值
+	*  透过向程序计数 器PC 写入跳转地址值，可以实现在4GB 的地址空间中的任意跳转
+	*  在跳转之前结合使用MOV LR，PC等类似指令，可以保存将来的返回地址值
+	*  从而实现在4GB连续的线性26位地址空间的子程序使用。
+snippet ovrnthgj    " 数据处理指令
+	操作码[24:21]	助记符	意义		效果    //{{{
+		0 			AND		逻辑位与	Td = Rn AND Op2
+		1			EOR		逻辑位异或	Rd = Rn EOR Op2
+		2			SUB		减          Rd = Rn - Op2
+		3			RSB		反向减      Rd = Op2 - Rn
+		4			ADD		加          Rd = Rn +Op2
+		5			ADC		带进位加    Rd = Rn + Op2
+		6			SBC		带进位减    Rd = Rn - Op2 + C - 1
+		7			RSC		反向带进位减Rd = Op2 - Rn + C - 1
+		8			TST		测试        根据Rn AND Op2 设置条件码
+		9			TEQ		测试相等    根据Rn EOR Op2 设置条件码
+		A			CMP		比较        根据Rn - Op2设置条件码
+		B			CMN		负数比较    根据Rn + Op2设置条件码
+		C			ORR		逻辑位或    Rd = Rn OR Op2
+		D			MOV		传送        Rd = Op2
+		E			BIC		位清零      Rd = Rn AND NOT Op2
+		F			MVN		求反        Rd = NOT Op2 //}}}
+snippet MOV
+	MOV${3:} 	${1:Rd}, ${2:Operand2}
+	*反汇编码:E3A0(Rd)002    Operand2是立即数,没有影响cpsr    //{{{{
+	*		  E1B0(Rd)300    Operand2是寄存器,有影响cpsr
+	*Rd:       目标寄存器    
+	*Operand2: 1.合法的立即数.eg:#0x10000000
+	*          2.寄存器、寄存器加上桶型移位器(与立即数之间不需要,)
+	*          |0000|0000| 0      00        0  |0000|
+	*          | Rd | Rs |   |桶型移位操作|    | Rm |
+	*Rs:寄存器移位长度(和奇偶有关)
+	*Rm:第二操作数寄存器
+	*          LSL(无符号数*2)(0)、ASR(除2,并保留符号位)(2)、LSR(无符号数除2)(1)、ROR(循环右移)(3)、RRX(后面不要加立即数)(3)
+	*注:不指定Rn(存放第1操作数的寄存器)
+	//}}}
+snippet MVN
+	MVN${3:} 	${1:Rd}, ${2:Operand2}
+	*汇编码为F    //{{{
+	*Rd:       目标寄存器    
+	*Operand2: 1.合法的立即数.eg:#0x10000000
+	*          2.寄存器、寄存器加上桶型移位器(与立即数之间不需要,)
+	*          |0000|0000| 0      00        0  |0000|
+	*          | Rd | Rs |   |桶型移位操作|    | Rm |
+	*Rs:寄存器移位长度(和奇偶有关)
+	*如果操作数为n那么实际存的值是-n-1
+	*eg MVN R0, #2 那么R0为FFFFFFFD
+	*注:不指定Rn(存放第1操作数的寄存器)
+	//}}}
+snippet CMP
+	CMP${3:} 	${1:Rd}, ${2:Operand2}
+	*CMP不需要增加"S"就可以以改变相应的标志位   
+snippet SUB
+	SUB${4:} 	${1:Rd}, ${2:Rn}, ${3:Operand2}
+	*当Rn-Operand2 = 负数时 N位置一,C位清零    //{{{
+	*当Rn-Operand2 > 0 时,C位置一,N位清零
+	*当Rn-Operand2 == 0时,Z位置一,C位置一    //}}}
+snippet RSB
+	RSB${4:} 	${1:Rd}, ${2:Rn}, ${3:Operand2}
+	*当Operand2 - Rn = 负数时 N位置一,C位清零    //{{{
+	*当Operand2 - Rn > 0 时,C位置一,N位清零
+	*当Operand2 - Rn == 0时,Z位置一,C位置一    //}}}
+snippet ADD
+	ADD${4:} 	${1:Rd}, ${2:Rn}, ${3:Operand2}
+	*当Rn+Operand2 = 负数时 N位置一,C位清零    //{{{
+	*当Rn+Operand2 > FFFFFFFF 时,C位置一,N位清零
+	*当Rn+Operand2 == 0时,Z位置一,C位置一    //}}}
+snippet ADC
+	ADC${4:} 	${1:Rd}, ${2:Rn}, ${3:Operand2}
+	*当执行这条语句之前c为1那么结果会加上一
+	*当Rn+Operand2 = 负数时 N位置一,C位清零    //{{{
+	*当Rn+Operand2 > FFFFFFFF 时,C位置一,N位清零
+	*当Rn+Operand2 == 0时,Z位置一,C位置一    //}}}
+snippet B
+	B${2:} 	${1:label}
+	*|0000|0000|0000|0000|0000|0000|0000|0000|    //{{{
+	*|Cond|101L|         偏移量              |
+	*L----0:为Branch(B)
+	*     1:为Branch with link(BL)
+	*偏移量要考虑流水线
+	*非叶子函数需要保持LR
+	*偏移量为16M的大小的指令条数,所以跳转范围:+-32Mbyte    //}}}
+snippet BL
+	BL${4:} 	${1:subroutine_label}
+	*|0000|0000|0000|0000|0000|0000|0000|0000|    //{{{
+	*|Cond|101L|         偏移量              |
+	*L----0:为Branch(B)
+	*     1:为Branch with link(BL)
+	*偏移量要考虑流水线
+	*非叶子函数需要保持LR
+	*偏移量为16M的大小的指令,所以跳转范围:+-32Mbyte    //}}}
+snippet BIC
+	BIC${4:} 	${1:Rd}, ${2:Rn}, ${3:Operand2}
+	*是将Operand2的有1的清零
+#以下是乖法指令
+snippet tfif
+	MUL    //{{{
+	MLA
+	UMULL
+	UMLAL
+	SMULL
+	SMLAL    //}}}
+snippet MUL
+	MUL${5:} 	${1:Rd}, ${2:Rm}, ${3:Rs}
+	* Rd = Rm * Rs    //{{{
+	* ARM7TDMI 上为2-5个周期
+	* StrongARM/XScale上为1-3周期
+	* ARM9E/ARM102xE上为2周期
+	* ARM9TDMI比ARM7TDMI多1周期
+	* 对于long型数据，多1周期    //}}}
+snippet MLA
+	MLA${5:} 	${1:Rd}, ${2:Rm}, ${3:Rs}, ${4:Rn}
+	* Rd = (Rm * Rs) + Rn    //{{{
+	* 比MUL多一个周期    //}}}
+snippet UMULL
+	UMULL${5:} 	${1:RdLo}, ${2:RdHi}, ${3:Rm}, ${4:Rs}
+	* 64位无符号乖:((32位)Rm * (32位)Rs) = (64位)RdHi,RdLo
+snippet UMLAL
+	UMULL${5:} 	${1:RdLo}, ${2:RdHi}, ${3:Rm}, ${4:Rs}
+	* 64位无符号乖:((32位)Rm * (32位)Rs) + (64位)RdHi,RdLo = (64位)RdHi,RdLo 
+snippet SMULL
+	SMULL${5:} 	${1:RdLo}, ${2:RdHi}, ${3:Rm}, ${4:Rs}
+	* 64位有符号乖:((32位)Rm * (32位)Rs) = (64位)RdHi,RdLo
+snippet SMLAL
+	SMULL${5:} 	${1:RdLo}, ${2:RdHi}, ${3:Rm}, ${4:Rs}
+	* 64位有符号乖:((32位)Rm * (32位)Rs) + (64位)RdHi,RdLo = (64位)RdHi,RdLo 
+#乖法指令结束
+
+#Load/Store指令
+snippet LDR
+	LDR${3:} 	${1:Rd}, ${2:=const/address}
+	*注:如果为伪指令那么Operand2前面的#号变成=面不需要再加#    //{{{
+	*1:当它为伪指令时:
+	*   const可以是一个数字或者label(相当于把地址看成立即数)
+	*	LDR Rd, =const, 保证了32bit常数
+	*   如果const为一个合法的立即数,编译器会帮它转换为MOV或MVN指令
+	*   如果const为不合法的立即数,编译器会在程序尾部开僻了一个数据池
+	*   然后从数据池中LDR 	Rd, [PC, #xXXXXXXXX]
+	*   
+	*2:当它为ARM指令时:
+	*  LDR{<cond>}{<size>}Rd, <address>
+	*  size:B(Byte),H(Halfword),SB(带符号的byte load),SH(带符号的halfword load),
+	*一、针对word和无符号byte的访问,偏移量可以是:
+	*    一个无符号12-bit立即数(0-4096bytes)
+	*  	    LDR R0, [R1, #8]
+	*       LDR R0, [R1, #8]! 能自动更新基址寄存器
+	*       LDR R0, [R1], #12 先偏移后更新R1里的内容
+	*    一个寄存器,或再加上/减去移位
+	*       LDR R0, [R1, R2, LSL #2]
+	*       LDR R0, [R1, -R2, LSL #2]
+	*二、对于halfword和带符号的halfword/byte,偏移量可以是:
+	*    一个无符号8bit立即数(如0-255bytes)
+	*    一个寄存器(不能有偏移操作)    //}}}
+snippet STR
+	STR${3:} 	${1:Rd}, ${2:address}
+	*eg: STR Rd, [R0]   STR只能这样写入    //{{{
+	*注:只能写入RAM内存,写入ROM内存会无效    //}}}
+snippet LDM
+	LDM${1:<addressing_mode>} 	${2:Rd(!)}, ${3:(R0-R15)}
+	*加了!之后Rd会随之改变    //{{{
+	*Rd里存的是基址寄存器
+	*addressing_mode:IA--先操作,后增加────────┐ 如果加上!后STM要与之对应匹配
+	*                IB--先增加,后操作────┐   │
+	*                DA--先操作,后递减────┘   │
+	*                DB--先递减,后操作────────┘    //}}}
+snippet STM
+	STM${1:<addressing_mode>} 	${2:Rd(!)}, ${3:(R0-R15)}
+	*加了!之后Rd会随之改变    //{{{
+	*注:基址寄存器的地址范围必须在RAM之间
+	*Rd里存的是基址寄存器
+	*addressing_mode:IA--先操作,后增加───────┐ 如果加上!后LDM要与之对应匹配
+	*                IB--先增加,后操作────┐  │
+	*                DA--先操作,后递减────┘  │
+	*                DB--先递减,后操作───────┘    //}}}
+snippet LDMFD
+	LDM${1:FD} 	${2:SP}, ${3:(R0-R15)}    
+	*Load的操作,把SP所指向的内在地址的内容取出来存到R0-R15中    //{{{
+	*XX通常为FD   满栈减的方式即先递减,后操作DB
+	*FA
+	*EA
+	*ED    //}}}
+snippet STMFD
+	STM${1:XX} 	${2:SP}, ${3:(R0-R15)}    
+	*Store的操作,把R0-R15中的值存向SP所指向的内在地址中    //{{{
+	*XX通常为FD   满栈减的方式即先递减,后操作DB
+	*FA
+	*EA
+	*ED    //}}}
+snippet MRS
+	MRS 	${1:Rd}, ${2:CPSR}
+	*因为指令长度的原因,无法对r0-r15以外的寄存器的操作    //{{{
+	*所以需要一个对cpsr和spsr操作的指令
+	*相当于把cpsr的值存到Rd中    //}}}
+snippet MSR
+	MSR 	${1:CPSR_C}, ${2:Rd}
+	*因为指令长度的原因,无法对r0-r15以外的寄存器的操作    //{{{
+	*所以需要一个对cpsr和spsr操作的指令
+	*重点CPSR后面要加上一个标志
+	*|0000|0000|0000|0000|0000|0000|0000|0000|
+	*|    f    |    s    |    x    |    c    |
+	* 条件标志   预保留              模式位
+	*相当于把Rd的值存到cpsr中,Rd可以是一个立即数    //}}}
+snippet AND
+	AND ${1:R0}, ${2:R0}, ${3:#0X0F}    ;逻辑与指令
