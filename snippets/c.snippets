@@ -17,6 +17,11 @@ snippet inc
 # #include "..."
 snippet Inc
 	#include "${1:`Filename("$1.h")`}"${2}
+# #ifndef __${}_H #define __${}_H ... #endif
+snippet DefH
+	#ifndef __${1:HELLO}_H
+	#define __${2:HELLO}_H
+	#endif
 # #ifndef ... #define ... #endif
 snippet Def
 	#ifndef $1
